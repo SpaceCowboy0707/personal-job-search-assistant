@@ -8,6 +8,7 @@ from zipfile import BadZipFile
 
 import streamlit as st
 from job_assistant.i18n import t, language_switch, option_labels
+from job_assistant.theme import theme_switch
 
 from job_assistant.resume import read_resume
 from job_assistant.service import analyze_and_save, report
@@ -38,6 +39,7 @@ st.markdown('''<style>
 @media (max-width: 760px) {.st-key-job_list {height: 350px !important;} .st-key-job_detail {padding: 12px !important;}}
 </style>''', unsafe_allow_html=True)
 language_switch()
+theme_switch()
 
 
 def show_result(a, prefix):
