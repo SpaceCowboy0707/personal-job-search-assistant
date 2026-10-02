@@ -23,10 +23,19 @@ ERRORS = (OSError, ValueError, sqlite3.Error, BadZipFile, ParseError, KeyError)
 
 st.set_page_config(page_title='Job Search Workspace', page_icon='🧭', layout='wide')
 st.markdown('''<style>
-.block-container {max-width: 1240px; padding-top: 4rem;}
+.block-container {max-width: 1600px; padding-top: 4rem;}
 .st-key-language_switch {position: fixed; top: 0.5rem; right: 9rem; width: auto; z-index: 1000000;}
 [data-testid="stMetric"] {background: #f0f5f4; border: 1px solid #dce6e2; border-radius: 12px; padding: 16px;}
 [data-testid="stSidebar"] {border-right: 1px solid #dce6e2;}
+[class*="st-key-job_card_"] {border-radius: 14px; padding: 14px !important; transition: border-color .15s;}
+[class*="st-key-job_card_idle_"]:hover {border-color: #198477;}
+[class*="st-key-job_card_active_"] {border: 2px solid #198477 !important; background: #1984770c;}
+[class*="st-key-job_card_"] button {text-align: left !important; justify-content: flex-start !important; padding: 0; width: 100%;}
+[class*="st-key-job_card_"] button p {font-weight: 650; font-size: 1rem; text-align: left !important;}
+[class*="st-key-job_card_"] [data-testid="stCaptionContainer"] {font-size: .8rem;}
+.st-key-job_detail {padding: 24px !important; border-radius: 16px;}
+.st-key-job_detail h3 {font-size: 1.55rem;}
+@media (max-width: 760px) {.st-key-job_list {height: 350px !important;} .st-key-job_detail {padding: 12px !important;}}
 </style>''', unsafe_allow_html=True)
 language_switch()
 

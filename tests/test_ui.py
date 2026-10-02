@@ -102,6 +102,30 @@ class UITests(unittest.TestCase):
                 self.assertEqual(app.session_state['inbox_selection'], jid)
                 api.assert_not_called()
 
+    def test_job_cards_select_and_filter_without_api(self):
+        from streamlit.testing.v1 import AppTest
+        from job_assistant import workspace as ws
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            db = root / 'test.db'
+            ids = []
+            for company in ('First', 'Second'):
+                ids.append(ws.import_job(root, db, root/'output', SAMPLE_RESUME, {'company': company, 'job_title':'Analyst', 'source_url':'', 'jd':company + ' SQL analysis', 'location':'NYC'}))
+            with patch.dict(os.environ, {'JOB_ASSISTANT_DB':str(db)}), patch.object(ws, 'structured_call') as api:
+                app = AppTest.from_file(str(Path(__file__).resolve().parents[1] / 'app.py')).run()
+                app.sidebar.radio[0].set_value('Job inbox').run()
+                self.assertFalse(any(s.label == 'Open job' for s in app.selectbox))
+                app.button(key=f'open_job_{ids[0]}').click().run()
+                self.assertEqual(app.session_state['inbox_selection'], ids[0])
+                self.assertEqual(app.text_area(key=f'full_jd_text_{ids[0]}').value, 'First SQL analysis')
+                app.text_input(key='inbox_query').set_value('Second').run()
+                self.assertEqual(app.session_state['inbox_selection'], ids[1])
+                self.assertFalse(any(b.key == f'open_job_{ids[0]}' for b in app.button))
+                app.text_input(key='inbox_query').set_value('No such company').run()
+                self.assertTrue(app.info)
+                self.assertFalse(app.exception)
+                api.assert_not_called()
+
     def test_inbox_generation_rerun_approval_and_stale_version(self):
         from streamlit.testing.v1 import AppTest
         from job_assistant import workspace as ws

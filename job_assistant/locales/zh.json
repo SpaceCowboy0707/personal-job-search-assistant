@@ -164,5 +164,17 @@
   "Could not read or update tracker: {error}": "无法读取或更新追踪记录：{error}",
   "Trial failed: {error}": "试用失败：{error}",
   "Could not read master resume: {error}": "无法读取主简历：{error}",
-  "Latest saved analysis - Tracker ID #{id}(click Analyze again after changing the input)": "最新分析 — 追踪编号 #{id}（修改输入后请重新点击分析）"
+  "Latest saved analysis - Tracker ID #{id}(click Analyze again after changing the input)": "最新分析 — 追踪编号 #{id}（修改输入后请重新点击分析）",
+  "Click a role. Review the fit. Shape your resume.": "点击岗位，查看匹配，调整简历。",
+  "Search settings and history": "搜索设置与历史",
+  "Search company or role": "搜索公司、岗位或地点",
+  "No roles match these filters. Try another filter or search.": "没有符合筛选条件的岗位，请调整筛选或搜索。",
+  "{count} roles · highest evidence score first": "{count} 个岗位 · 按证据匹配分排序",
+  "Not analyzed": "待分析",
+  "Salary unknown": "薪资未披露",
+  "Verification sources": "核实来源",
+  "Employment": "雇佣性质",
+  "Hybrid": "混合办公",
+  "Visa": "签证",
+  "Role Direction": "岗位方向"
 }
