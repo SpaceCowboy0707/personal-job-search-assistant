@@ -4,11 +4,11 @@ from .i18n import t
 
 
 def toggle_theme():
-    st.session_state['dark_mode'] = not st.session_state.get('dark_mode', False)
+    st.session_state['dark_mode'] = not st.session_state.get('dark_mode', True)
 
 
 def theme_switch():
-    dark = st.session_state.get('dark_mode', False)
+    dark = st.session_state.get('dark_mode', True)
     with st.container(key='theme_switch'):
         st.button(t('Light mode') if dark else t('Dark mode'),
                   icon=':material/light_mode:' if dark else ':material/dark_mode:',

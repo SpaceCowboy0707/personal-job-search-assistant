@@ -41,7 +41,7 @@ Open http://127.0.0.1:8502. Keep the terminal open; Ctrl+C stops the server. If 
 
 Use the top-right language button to switch between English and Chinese. It changes navigation, controls and interface messages locally without API calls, while preserving the selected page and job. Job descriptions, existing analysis text, source evidence and resume bullets retain their original language. English remains the default; the selection lasts for the browser session. Chinese UI translations live in `job_assistant/locales/zh.json`; code, prompts and documentation remain English.
 
-The adjacent **Dark mode / Light mode** button changes the workspace appearance for the current browser session, without API calls or changes to saved jobs.
+Dark mode is the default. The adjacent **Dark mode / Light mode** button changes the workspace appearance for the current browser session, without API calls or changes to saved jobs.
 
 Set the master resume path in the sidebar. DOCX, TXT, and Markdown are supported. Loading the fictional example does not save anything until you click Analyze. Each explicit analysis creates a new record; reruns and downloads do not. Metadata overrides take precedence over JD labels.
 
