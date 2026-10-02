@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented: CLI/Streamlit rule-based analysis, original-text drafting, SQLite tracking, optional OpenAI suggestions, usage records, and budget checks. Live API verification requires a configured key. Discovery, scheduling, visa verification, registration, and submission are not implemented or enabled.
+Implemented: CLI/Streamlit analysis, manual bounded public-web discovery, pending/excluded job inbox, web-assisted official/visa reports, requirement-level evidence analysis, source-linked bullet generation and fact checks, version review, SQLite tracking and budget checks. Live calls require a configured key. Scheduling, registration and submission are not enabled. Web reports require human source review; they do not establish visa eligibility.
 
 The expanded scope supersedes the initial V1 restriction on application automation. Current code still submits nothing.
 

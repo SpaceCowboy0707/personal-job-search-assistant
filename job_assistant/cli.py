@@ -10,6 +10,7 @@ from .tracker import STATUSES, connect
 from .service import analyze_and_save, report
 
 ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_RESUME = ROOT / 'private/Master Resume.docx' if (ROOT / 'private/Master Resume.docx').exists() else ROOT / 'private/master_resume.txt'
 
 
 def main(argv=None):
@@ -20,7 +21,7 @@ def main(argv=None):
     commands = parser.add_subparsers(dest='command', required=True)
     run = commands.add_parser('analyze', help='Analyze a UTF-8 job description and save a NEW tracker row')
     run.add_argument('job_description', type=Path)
-    run.add_argument('--resume', type=Path, default=Path(os.environ.get('JOB_ASSISTANT_RESUME', ROOT / 'private/master_resume.txt')))
+    run.add_argument('--resume', type=Path, default=Path(os.environ.get('JOB_ASSISTANT_RESUME', DEFAULT_RESUME)))
     run.add_argument('--output-dir', type=Path, default=ROOT / 'output')
     for key in ('company', 'job-title', 'job-url', 'salary', 'location', 'work-mode'):
         run.add_argument('--' + key)

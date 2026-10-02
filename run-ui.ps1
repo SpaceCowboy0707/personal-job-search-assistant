@@ -1,3 +1,4 @@
+param([int]$Port = 8502)
 $ErrorActionPreference = 'Stop'
 $uiPython = Join-Path $PSScriptRoot '.venv/Scripts/python.exe'
 if (-not (Test-Path -LiteralPath $uiPython)) {
@@ -5,7 +6,7 @@ if (-not (Test-Path -LiteralPath $uiPython)) {
 }
 Push-Location $PSScriptRoot
 try {
-    & $uiPython -m streamlit run app.py --server.address 127.0.0.1 --server.port 8501 --server.headless true --browser.gatherUsageStats false
+    & $uiPython -m streamlit run app.py --server.address 127.0.0.1 --server.port $Port --server.headless true --browser.gatherUsageStats false
 } finally {
     Pop-Location
 }

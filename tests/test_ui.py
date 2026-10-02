@@ -16,6 +16,10 @@ class UITests(unittest.TestCase):
         env = patch.dict(os.environ, {'JOB_ASSISTANT_RESUME': SAMPLE_RESUME})
         env.start()
         self.addCleanup(env.stop)
+        # Tests must not depend on a developer's real local secret file.
+        key = patch('job_assistant.api_model.api_key', side_effect=lambda root: os.environ.get('OPENAI_API_KEY', ''))
+        key.start()
+        self.addCleanup(key.stop)
     def test_api_page_missing_key_and_mocked_call(self):
         from streamlit.testing.v1 import AppTest
         from job_assistant.api_model import usage
@@ -75,3 +79,31 @@ class UITests(unittest.TestCase):
         next(b for b in app.button if b.label == 'Analyze and save to tracker').click().run()
         self.assertFalse(app.exception)
         self.assertIn('Enter a job description first', app.error[0].value)
+
+    def test_inbox_generation_rerun_approval_and_stale_version(self):
+        from streamlit.testing.v1 import AppTest
+        from job_assistant import workspace as ws
+        from job_assistant.resume import read_resume
+        from job_assistant.tracker import connect
+        fact = next(f for f in read_resume(SAMPLE_RESUME)['facts'] if f['section'] in ('experience', 'professional experience') and ':' in f['text'])
+        generated = {'data': {'bullets': [{'source_id': fact['id'], 'text': fact['text'], 'why': 'Relevant original evidence'}]}, 'run_id': 'g', 'estimated_cost_usd': .001}
+        checked = {'data': {'checks': [{'index': 0, 'supported': True, 'reason': 'Original wording'}]}, 'run_id': 'c', 'estimated_cost_usd': .001}
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            db = root / 'test.db'
+            jid = ws.import_job(root, db, root/'output', SAMPLE_RESUME, {'company':'Example', 'job_title':'Analyst', 'source_url':'https://www.builtinnyc.com/job/analyst/123', 'jd':'SQL analysis', 'location':'NYC'})
+            with patch.dict(os.environ, {'JOB_ASSISTANT_DB':str(db), 'JOB_ASSISTANT_OUTPUT':str(root/'output')}), patch.object(ws, 'structured_call', side_effect=[generated, checked]) as call:
+                app = AppTest.from_file(str(Path(__file__).resolve().parents[1] / 'app.py')).run()
+                app.sidebar.radio[0].set_value('Job inbox').run()
+                self.assertFalse(app.exception)
+                next(b for b in app.button if b.label == 'Generate tailored bullets').click().run()
+                self.assertFalse(app.exception)
+                app.run()
+                self.assertEqual(call.call_count, 2)
+                next(b for b in app.button if b.label == 'Approve this bullet version').click().run()
+                with connect(db) as conn:
+                    self.assertEqual(conn.execute('SELECT approved FROM bullet_versions').fetchone()[0], 1)
+                ws.save_full_jd(db, jid, 'SQL and additional requirements')
+                app.run()
+                self.assertFalse(app.exception)
+                self.assertFalse(any(b.label == 'Approve this bullet version' for b in app.button))

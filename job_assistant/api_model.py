@@ -52,7 +52,7 @@ def usage(path):
             'rows': rows}
 
 
-def reserve(path, limits, resume_hash):
+def reserve(path, limits, resume_hash, amount=RESERVE):
     stamp, run_id = now(), uuid.uuid4().hex
     with closing(ledger(path)) as db, db:
         db.execute('BEGIN IMMEDIATE')
@@ -60,16 +60,71 @@ def reserve(path, limits, resume_hash):
             COALESCE(SUM(CASE WHEN substr(started,1,10)=? THEN charge ELSE 0 END),0),
             COALESCE(SUM(CASE WHEN substr(started,1,7)=? THEN charge ELSE 0 END),0)
             FROM api_runs''', (stamp[:10], stamp[:7])).fetchone()
-        if day + RESERVE > limits['daily_usd'] + 1e-9 or month + RESERVE > limits['monthly_usd'] + 1e-9:
+        if day + amount > limits['daily_usd'] + 1e-9 or month + amount > limits['monthly_usd'] + 1e-9:
             raise ValueError('The tool budget limit has been reached. No API request was sent.')
         db.execute('INSERT INTO api_runs VALUES (?,?,?,?,?,NULL,NULL,NULL,?)',
-                   (run_id, stamp, 'RUNNING', MODEL, RESERVE, resume_hash))
+                   (run_id, stamp, 'RUNNING', MODEL, amount, resume_hash))
     return run_id
 
 
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
+
+
+def structured_call(root, db_path, limits, instructions, data, schema, *, source_hash='', search_domains=None):
+    """Shared bounded call. Search references are retained for provenance checks."""
+    key = api_key(root)
+    if not key:
+        raise ValueError('Configure OPENAI_API_KEY locally before running this action.')
+    payload = {'model': MODEL, 'store': False, 'max_output_tokens': 6000,
+               'reasoning': {'effort': 'low'}, 'instructions': instructions,
+               'input': json.dumps(data, ensure_ascii=False),
+               'text': {'format': {'type': 'json_schema', 'name': 'job_workspace', 'strict': True, 'schema': schema}}}
+    amount = .10
+    if search_domains is not None:
+        tool = {'type': 'web_search', 'search_context_size': 'low'}
+        if search_domains:
+            tool['filters'] = {'allowed_domains': search_domains}
+        payload.update({'tools': [tool],
+                        'tool_choice': 'required', 'max_tool_calls': 3,
+                        'include': ['web_search_call.action.sources']})
+        amount = .25
+    if len(json.dumps(payload, ensure_ascii=False).encode('utf-8')) > 60000:
+        raise ValueError('Input is too long. Shorten the job description before retrying.')
+    run_id = reserve(db_path, limits, source_hash, amount)
+    charge, inputs, outputs, result = amount, None, None, None
+    status = 'OUTCOME_UNKNOWN'
+    try:
+        response = send(payload, key)
+        counts = response.get('usage') or {}
+        if all(isinstance(counts.get(k), int) and counts[k] >= 0 for k in ('input_tokens', 'output_tokens')):
+            inputs, outputs = counts['input_tokens'], counts['output_tokens']
+            calls = sum(x.get('type') == 'web_search_call' for x in response.get('output', []))
+            charge = (inputs * .75 + outputs * 4.5) / 1_000_000 + calls * .01
+        status = 'INVALID_RESPONSE'
+        if response.get('status') != 'completed':
+            raise ValueError('The response is incomplete. Usage was recorded; no automatic retry.')
+        parts = [p for x in response.get('output', []) if x.get('type') == 'message' for p in x.get('content', [])]
+        if any(p.get('type') == 'refusal' for p in parts):
+            raise ValueError('The model declined this request. Usage was recorded.')
+        result = json.loads(''.join(p['text'] for p in parts if p.get('type') == 'output_text'))
+        sources = []
+        for item in response.get('output', []):
+            if item.get('type') == 'web_search_call':
+                action = item.get('action') or {}
+                sources.extend(s.get('url', '') for s in action.get('sources', []))
+                if action.get('url'):
+                    sources.append(action['url'])
+        for part in parts:
+            sources.extend(a.get('url', '') for a in part.get('annotations', []) if a.get('type') == 'url_citation')
+        status = 'SUCCEEDED'
+        return {'data': result, 'sources': sorted(set(filter(None, sources))),
+                'run_id': run_id, 'estimated_cost_usd': charge}
+    finally:
+        with closing(ledger(db_path)) as db, db:
+            db.execute('UPDATE api_runs SET status=?,charge=?,input_tokens=?,output_tokens=?,result_json=? WHERE id=?',
+                       (status, charge, inputs, outputs, json.dumps(result, ensure_ascii=False) if result else None, run_id))
 
 
 def send(payload, key):
@@ -80,7 +135,18 @@ def send(payload, key):
         with build_opener(NoRedirect()).open(req, timeout=120) as response:
             return json.load(response)
     except HTTPError as error:
-        raise ValueError(f'OpenAI request failed (HTTP {error.code}). Check your key, account balance, and model access. No automatic retry.') from None
+        try:
+            code = json.load(error).get('error', {}).get('code')
+        except (ValueError, AttributeError):
+            code = None
+        hints = {
+            'insufficient_quota': 'API quota or credit balance is insufficient. Check API billing and project limits.',
+            'rate_limit_exceeded': 'The API rate limit was reached. Wait before trying again.',
+            'invalid_api_key': 'The API key is invalid. Check your local configuration.',
+            'model_not_found': 'This model is unavailable to the API project.',
+        }
+        hint = hints.get(code, 'Check your key, account balance, and model access.')
+        raise ValueError(f'OpenAI request failed (HTTP {error.code}). {hint} No automatic retry.') from None
     except (OSError, ValueError):
         raise ValueError('The API response was not fully received. Billing needs verification; no automatic retry.') from None
 

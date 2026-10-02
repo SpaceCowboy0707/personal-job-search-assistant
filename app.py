@@ -12,8 +12,10 @@ from job_assistant.resume import read_resume
 from job_assistant.service import analyze_and_save, report
 from job_assistant.tracker import STATUSES, connect
 from job_assistant.api_model import api_key, advise, usage
+from job_assistant.workspace_ui import render as render_workspace
 
 ROOT = Path(__file__).resolve().parent
+DEFAULT_RESUME = ROOT / 'private/Master Resume.docx' if (ROOT / 'private/Master Resume.docx').exists() else ROOT / 'private/master_resume.txt'
 DB = Path(os.environ.get('JOB_ASSISTANT_DB', ROOT / 'data/jobs.sqlite3'))
 OUTPUT = Path(os.environ.get('JOB_ASSISTANT_OUTPUT', ROOT / 'output'))
 ERRORS = (OSError, ValueError, sqlite3.Error, BadZipFile, ParseError, KeyError)
@@ -73,12 +75,12 @@ def show_result(a, prefix):
 with st.sidebar:
     st.markdown('### 🧭 Job Search Workspace')
     st.caption('From job descriptions to evidence-backed resume drafts')
-    page = st.radio('Workspace', ['Analyze a job', 'Job tracker', 'Master resume', 'Agent settings and trial'], label_visibility='collapsed')
+    page = st.radio('Workspace', ['Analyze a job', 'Job inbox', 'Job tracker', 'Master resume', 'Agent settings and trial'], label_visibility='collapsed')
     st.divider()
     st.markdown('**Your preferences**')
     st.caption('NYC / NYC metro · Hybrid preferred\n\nAbout $100,000+ base salary\n\nData / BI / Business Analytics\nAnalytics Engineering · Retail / AI')
     with st.expander('Master resume settings'):
-        resume_path = st.text_input('Local master resume path', os.environ.get('JOB_ASSISTANT_RESUME', str(ROOT / 'private/master_resume.txt')), key='resume_path')
+        resume_path = st.text_input('Local master resume path', os.environ.get('JOB_ASSISTANT_RESUME', str(DEFAULT_RESUME)), key='resume_path')
         st.caption('Supports DOCX / TXT / MD. This file is read when analysis runs.')
     st.divider()
     st.caption('Master resume is the source of truth\n\nApplications are submitted manually')
@@ -124,6 +126,12 @@ if page == 'Analyze a job':
         st.divider()
         st.success(f"Latest saved analysis - Tracker ID #{result['tracker_id']}(click Analyze again after changing the input)")
         show_result(result, f"new_{result['tracker_id']}")
+
+elif page == 'Job inbox':
+    try:
+        render_workspace(ROOT, DB, OUTPUT, Path(resume_path))
+    except (*ERRORS, TimeoutError, StopIteration) as error:
+        st.error(f'Workspace action failed: {error}')
 
 elif page == 'Job tracker':
     st.title('Job tracker')
