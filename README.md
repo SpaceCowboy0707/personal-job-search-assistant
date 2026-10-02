@@ -39,6 +39,8 @@ Open http://127.0.0.1:8502. Keep the terminal open; Ctrl+C stops the server. If 
 - **Master resume:** inspect source paragraphs and SHA-256.
 - **Agent settings and trial:** check key availability and cost estimates, generate API suggestions, and download saved results.
 
+Use the top-right language button to switch between English and Chinese. It changes navigation, controls and interface messages locally without API calls, while preserving the selected page and job. Job descriptions, existing analysis text, source evidence and resume bullets retain their original language. English remains the default; the selection lasts for the browser session. Chinese UI translations live in `job_assistant/locales/zh.json`; code, prompts and documentation remain English.
+
 Set the master resume path in the sidebar. DOCX, TXT, and Markdown are supported. Loading the fictional example does not save anything until you click Analyze. Each explicit analysis creates a new record; reruns and downloads do not. Metadata overrides take precedence over JD labels.
 
 The UI binds to loopback, disables Streamlit usage statistics, and limits uploads to 5 MB. It is not configured for public hosting. Rule-based analysis stays local; explicit API generation sends extracted resume text and the JD to OpenAI.

@@ -80,6 +80,28 @@ class UITests(unittest.TestCase):
         self.assertFalse(app.exception)
         self.assertIn('Enter a job description first', app.error[0].value)
 
+    def test_language_toggle_preserves_page_and_job_without_api_calls(self):
+        from streamlit.testing.v1 import AppTest
+        from job_assistant import workspace as ws
+        from job_assistant.i18n import catalog
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            db = root / 'test.db'
+            jid = ws.import_job(root, db, root/'output', SAMPLE_RESUME, {'company':'Example', 'job_title':'Analyst', 'source_url':'https://www.builtinnyc.com/job/analyst/123', 'jd':'SQL analysis', 'location':'NYC'})
+            with patch.dict(os.environ, {'JOB_ASSISTANT_DB':str(db)}), patch.object(ws, 'structured_call') as api:
+                app = AppTest.from_file(str(Path(__file__).resolve().parents[1] / 'app.py')).run()
+                app.sidebar.radio[0].set_value('Job inbox').run()
+                app.button(key='toggle_language').click().run()
+                self.assertFalse(app.exception)
+                self.assertEqual(app.title[0].value, catalog()['Job inbox'])
+                self.assertEqual(app.session_state['ui_Workspace'], 'Job inbox')
+                self.assertEqual(app.session_state['inbox_selection'], jid)
+                self.assertEqual(app.text_area(key=f'full_jd_text_{jid}').value, 'SQL analysis')
+                app.button(key='toggle_language').click().run()
+                self.assertEqual(app.title[0].value, 'Job inbox')
+                self.assertEqual(app.session_state['inbox_selection'], jid)
+                api.assert_not_called()
+
     def test_inbox_generation_rerun_approval_and_stale_version(self):
         from streamlit.testing.v1 import AppTest
         from job_assistant import workspace as ws
