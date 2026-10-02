@@ -1,0 +1,12 @@
+Alex Example
+Fictional resume for demonstrations and tests only.
+SKILLS
+SQL, Python, Power BI, Tableau
+PROFESSIONAL EXPERIENCE
+Example Retail Company
+Data Analyst | 2024 - Present
+Reporting: Built SQL reports and Power BI dashboards for sales and inventory analysis.
+Automation: Built Python workflows for data validation and reporting.
+Collaboration: Worked with stakeholders to define business metrics.
+EDUCATION
+Example University | Business Analytics

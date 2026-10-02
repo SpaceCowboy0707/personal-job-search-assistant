@@ -1,0 +1,14 @@
+Company: Example Retail (fictional demo)
+Job title: Senior BI Analyst
+Location: New York, NY
+Work mode: Hybrid, 3 days in office
+Base salary: USD $110,000 - $135,000 per year
+Requirements:
+SQL and Python for ETL and data validation.
+Power BI dashboards and DAX.
+Retail inventory and margin analytics with stakeholders.
+Microsoft Fabric migration experience.
+5+ years of analytics experience.
+Preferred:
+Snowflake and dbt.
+Generative AI workflow automation.

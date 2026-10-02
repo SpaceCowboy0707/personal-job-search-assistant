@@ -1,0 +1,12 @@
+# Private source documents and generated personal data stay local.
+*.docx
+*.pdf
+data/
+output/
+private/
+.venv/
+__pycache__/
+*.pyc
+*.sqlite3*
+.env
+.streamlit/secrets.toml

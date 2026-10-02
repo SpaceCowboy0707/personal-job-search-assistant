@@ -1,0 +1,13 @@
+{
+  "schedule": {
+    "timezone": "America/New_York",
+    "weekdays": [0, 1, 2, 3, 4],
+    "time": "09:00",
+    "enabled": false
+  },
+  "model": {
+    "provider": "openai",
+    "name": "gpt-5.4-mini"
+  },
+  "budget": {"daily_usd": 1.0, "monthly_usd": 20.0}
+}
